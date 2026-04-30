@@ -5,742 +5,274 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Petra Running Club · PB Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --bg: #080b12;
-  --bg2: #0d1220;
-  --surface: #111827;
-  --surface2: #1a2235;
-  --surface3: #202d42;
-  --border: #1e2d45;
-  --border2: #2a3f5c;
-  --text: #e8edf5;
-  --muted: #5a7090;
-  --muted2: #8097b4;
-  --accent: #e8ff47;
-  --accent2: #c8e020;
-  --orange: #ff6b35;
-  --blue: #4a9eff;
-  --purple: #9f7aea;
-  --green: #38e17a;
-  --gold: #ffc94d;
-  --silver: #9ab3cc;
-  --bronze: #d4845a;
-  --red: #ff4d6d;
-  --5k: #38e17a;
-  --10k: #4a9eff;
-  --hm: #9f7aea;
-  --fm: #ff6b35;
+  --bg:#080b12;--bg2:#0d1220;--surface:#111827;--surface2:#1a2235;
+  --border:#1e2d45;--border2:#2a3f5c;--text:#e8edf5;--muted:#5a7090;
+  --muted2:#8097b4;--accent:#e8ff47;--accent2:#c8e020;--orange:#ff6b35;
+  --blue:#4a9eff;--purple:#9f7aea;--green:#38e17a;--gold:#ffc94d;
+  --silver:#9ab3cc;--bronze:#d4845a;--red:#ff4d6d;
+  --5k:#38e17a;--10k:#4a9eff;--hm:#9f7aea;--fm:#ff6b35;
 }
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+.sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:28px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.logo-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:0.08em;color:var(--accent);line-height:1}
+.logo-sub{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;margin-top:2px}
+.nav-section-label{padding:16px 20px 5px;font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:0.85rem;font-weight:500;color:var(--muted2);cursor:pointer;border-left:3px solid transparent;transition:all 0.18s}
+.nav-item:hover{color:var(--text);background:rgba(232,255,71,0.04)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(232,255,71,0.07)}
+.nav-icon{font-size:1rem;width:20px;text-align:center}
+.pending-badge{margin-left:auto;background:var(--red);color:white;font-size:0.63rem;font-weight:700;padding:1px 7px;border-radius:999px;display:none}
+.main{flex:1;overflow-y:auto;padding:32px 28px;min-width:0}
+.section{display:none}.section.active{display:block}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:0.06em;line-height:1}
+.page-subtitle{color:var(--muted2);font-size:0.83rem;margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:8px;border:none;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.18s;white-space:nowrap}
+.btn-accent{background:var(--accent);color:#080b12}.btn-accent:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--muted2)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-ghost{background:transparent;border:none;color:var(--muted);padding:8px 12px}
+.btn-danger{background:rgba(255,77,109,0.12);color:var(--red);border:1px solid rgba(255,77,109,0.2)}.btn-danger:hover{background:rgba(255,77,109,0.22)}
+.btn-approve{background:rgba(56,225,122,0.12);color:var(--green);border:1px solid rgba(56,225,122,0.2)}.btn-approve:hover{background:rgba(56,225,122,0.22)}
+.btn-sm{padding:6px 14px;font-size:0.78rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.stat-card.c-green::after{background:var(--green)}.stat-card.c-blue::after{background:var(--blue)}
+.stat-card.c-purple::after{background:var(--purple)}.stat-card.c-orange::after{background:var(--orange)}
+.stat-card.c-gold::after{background:var(--gold)}.stat-card.c-accent::after{background:var(--accent)}
+.stat-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:5px}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:2rem;line-height:1}
+.stat-sub{font-size:0.7rem;color:var(--muted);margin-top:3px}
+.dist-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.dist-tab{padding:8px 18px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;color:var(--muted2);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.18s}
+.dist-tab.active-5k{border-color:var(--5k);color:var(--5k);background:rgba(56,225,122,0.08)}
+.dist-tab.active-10k{border-color:var(--10k);color:var(--10k);background:rgba(74,158,255,0.08)}
+.dist-tab.active-hm{border-color:var(--hm);color:var(--hm);background:rgba(159,122,234,0.08)}
+.dist-tab.active-fm{border-color:var(--fm);color:var(--fm);background:rgba(255,107,53,0.08)}
+.lb-table{width:100%;border-collapse:collapse}
+.lb-table th{padding:10px 14px;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:1px solid var(--border)}
+.lb-table td{padding:12px 14px;font-size:0.88rem;border-bottom:1px solid var(--border);vertical-align:middle}
+.lb-table tr:last-child td{border-bottom:none}
+.lb-table tbody tr:hover td{background:rgba(232,255,71,0.025)}
+.rank-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;font-weight:800;font-size:0.8rem;font-family:'JetBrains Mono',monospace}
+.r1{background:rgba(255,201,77,0.18);color:var(--gold)}.r2{background:rgba(154,179,204,0.15);color:var(--silver)}.r3{background:rgba(212,132,90,0.18);color:var(--bronze)}.rn{background:var(--surface2);color:var(--muted)}
+.runner-cell{display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0}
+.runner-name-col{font-weight:600}.runner-strava{font-size:0.72rem;color:var(--muted);margin-top:1px}
+.pb-mono{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1rem}
+.time-type-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em}
+.badge-official{background:rgba(56,225,122,0.12);color:var(--green)}.badge-unofficial{background:rgba(255,201,77,0.12);color:var(--gold)}
+.gender-m{color:var(--blue);font-size:0.72rem;font-weight:700}.gender-f{color:#ff80b5;font-size:0.72rem;font-weight:700}
+.submit-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:7px}
+.form-label{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted2)}
+.form-input,.form-select{background:var(--surface2);border:1.5px solid var(--border2);border-radius:9px;padding:11px 14px;color:var(--text);font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.18s;width:100%}
+.form-input:focus,.form-select:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}.form-select option{background:var(--surface2)}
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;transition:all 0.2s}
+.profile-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.profile-card-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.pb-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.pb-row:last-child{border-bottom:none}
+.pb-dist-label{font-size:0.72rem;font-weight:700;text-transform:uppercase}
+.pb-val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:0.88rem}
+.pb-val.none{color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;font-size:0.78rem;font-style:italic}
+.queue-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.queue-info{flex:1;min-width:160px}.queue-name{font-weight:700;font-size:0.95rem}.queue-meta{font-size:0.78rem;color:var(--muted2);margin-top:3px}
+.queue-time{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700}.queue-actions{display:flex;gap:8px;flex-wrap:wrap}
+.official-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}.official-row:last-child{border-bottom:none}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:28px;width:100%;max-width:440px}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--accent);margin-bottom:18px}
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;gap:14px;color:var(--muted)}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notif{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:14px 20px;font-size:0.88rem;display:flex;align-items:center;gap:10px;z-index:999;transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);max-width:320px}
+.notif.show{transform:translateY(0);opacity:1}
+.empty{text-align:center;padding:48px;color:var(--muted)}.empty-icon{font-size:2.5rem;margin-bottom:10px}
+.hamburger{display:none}
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-220px;z-index:200;height:100vh;transition:left 0.25s}
+  .sidebar.open{left:0}
+  .hamburger{display:flex;position:fixed;top:16px;left:16px;z-index:300;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:1.1rem;color:var(--text)}
+  .main{padding:20px 16px;padding-top:60px}
+  .submit-grid{grid-template-columns:1fr}
+  .page-title{font-size:1.8rem}
 }
-
-/* ── Noise texture overlay ── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ── Layout ── */
-.app { position: relative; z-index: 1; display: flex; min-height: 100vh; }
-
-.sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  background: var(--bg2);
-  border-right: 1px solid var(--border);
-  padding: 28px 0;
-  display: flex;
-  flex-direction: column;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-}
-
-.logo {
-  padding: 0 20px 28px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 20px;
-}
-
-.logo-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.6rem;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-  line-height: 1;
-}
-
-.logo-sub { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 2px; }
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--muted2);
-  cursor: pointer;
-  border-left: 3px solid transparent;
-  transition: all 0.18s;
-}
-
-.nav-item:hover { color: var(--text); background: rgba(232,255,71,0.04); }
-.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(232,255,71,0.07); }
-.nav-icon { font-size: 1rem; width: 20px; text-align: center; }
-
-.nav-section-label {
-  padding: 18px 20px 6px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--muted);
-}
-
-.pending-badge {
-  margin-left: auto;
-  background: var(--red);
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 1px 7px;
-  border-radius: 999px;
-}
-
-.main { flex: 1; overflow-y: auto; padding: 32px 28px; min-width: 0; }
-
-/* ── Page header ── */
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.page-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.4rem;
-  letter-spacing: 0.06em;
-  line-height: 1;
-}
-
-.page-subtitle { color: var(--muted2); font-size: 0.85rem; margin-top: 4px; }
-
-/* ── Buttons ── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  transition: all 0.18s;
-  white-space: nowrap;
-}
-
-.btn-accent { background: var(--accent); color: #080b12; }
-.btn-accent:hover { background: var(--accent2); transform: translateY(-1px); }
-.btn-outline { background: transparent; border: 1.5px solid var(--border2); color: var(--muted2); }
-.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-.btn-ghost { background: transparent; border: none; color: var(--muted); padding: 8px 12px; }
-.btn-ghost:hover { color: var(--text); }
-.btn-danger { background: rgba(255,77,109,0.12); color: var(--red); border: 1px solid rgba(255,77,109,0.2); }
-.btn-danger:hover { background: rgba(255,77,109,0.22); }
-.btn-approve { background: rgba(56,225,122,0.12); color: var(--green); border: 1px solid rgba(56,225,122,0.2); }
-.btn-approve:hover { background: rgba(56,225,122,0.22); }
-.btn-sm { padding: 6px 12px; font-size: 0.78rem; }
-
-/* ── Cards ── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 20px;
-}
-
-/* ── Stats row ── */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 14px;
-  margin-bottom: 28px;
-}
-
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 18px;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 2px;
-}
-
-.stat-card.c-green::after { background: var(--green); }
-.stat-card.c-blue::after { background: var(--blue); }
-.stat-card.c-purple::after { background: var(--purple); }
-.stat-card.c-orange::after { background: var(--orange); }
-.stat-card.c-gold::after { background: var(--gold); }
-.stat-card.c-accent::after { background: var(--accent); }
-
-.stat-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
-.stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; line-height: 1; }
-.stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
-
-/* ── Tabs ── */
-.dist-tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.dist-tab {
-  padding: 8px 18px;
-  border-radius: 8px;
-  border: 1.5px solid var(--border2);
-  background: transparent;
-  color: var(--muted2);
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  transition: all 0.18s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dist-tab:hover { border-color: var(--muted2); color: var(--text); }
-.dist-tab.active-5k { border-color: var(--5k); color: var(--5k); background: rgba(56,225,122,0.08); }
-.dist-tab.active-10k { border-color: var(--10k); color: var(--10k); background: rgba(74,158,255,0.08); }
-.dist-tab.active-hm { border-color: var(--hm); color: var(--hm); background: rgba(159,122,234,0.08); }
-.dist-tab.active-fm { border-color: var(--fm); color: var(--fm); background: rgba(255,107,53,0.08); }
-
-/* ── Leaderboard table ── */
-.lb-table { width: 100%; border-collapse: collapse; }
-.lb-table th {
-  padding: 10px 14px;
-  text-align: left;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
-}
-
-.lb-table td {
-  padding: 12px 14px;
-  font-size: 0.88rem;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-
-.lb-table tr:last-child td { border-bottom: none; }
-.lb-table tbody tr { transition: background 0.15s; }
-.lb-table tbody tr:hover td { background: rgba(232,255,71,0.025); }
-
-.rank-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  font-weight: 800;
-  font-size: 0.8rem;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.r1 { background: rgba(255,201,77,0.18); color: var(--gold); }
-.r2 { background: rgba(154,179,204,0.15); color: var(--silver); }
-.r3 { background: rgba(212,132,90,0.18); color: var(--bronze); }
-.rn { background: var(--surface2); color: var(--muted); }
-
-.runner-cell { display: flex; align-items: center; gap: 10px; }
-
-.avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 0.8rem;
-  flex-shrink: 0;
-}
-
-.runner-name-col { font-weight: 600; }
-.runner-strava { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
-
-.pb-mono {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.time-type-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.badge-official { background: rgba(56,225,122,0.12); color: var(--green); }
-.badge-unofficial { background: rgba(255,201,77,0.12); color: var(--gold); }
-.badge-pending { background: rgba(255,77,109,0.12); color: var(--red); }
-
-.gender-m { color: var(--blue); font-size: 0.72rem; font-weight: 700; }
-.gender-f { color: #ff80b5; font-size: 0.72rem; font-weight: 700; }
-
-/* ── Submit form ── */
-.submit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 700px) { .submit-grid { grid-template-columns: 1fr; } }
-
-.form-group { display: flex; flex-direction: column; gap: 7px; }
-.form-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted2);
-}
-
-.form-input, .form-select {
-  background: var(--surface2);
-  border: 1.5px solid var(--border2);
-  border-radius: 9px;
-  padding: 11px 14px;
-  color: var(--text);
-  font-size: 0.9rem;
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  transition: border-color 0.18s;
-  width: 100%;
-}
-
-.form-input:focus, .form-select:focus { border-color: var(--accent); }
-.form-input::placeholder { color: var(--muted); }
-.form-select option { background: var(--surface2); }
-
-
-
-/* ── Admin queue ── */
-.queue-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 18px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.queue-screenshot {
-  width: 64px; height: 64px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid var(--border2);
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: transform 0.15s;
-}
-
-.queue-screenshot:hover { transform: scale(1.05); }
-
-.queue-info { flex: 1; min-width: 160px; }
-.queue-name { font-weight: 700; font-size: 0.95rem; }
-.queue-meta { font-size: 0.78rem; color: var(--muted2); margin-top: 3px; }
-.queue-time { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; }
-.queue-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* ── Image lightbox ── */
-.lightbox {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.88);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.lightbox.open { display: flex; }
-.lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 10px; }
-.lightbox-close {
-  position: absolute; top: 20px; right: 24px;
-  font-size: 1.8rem; color: white; cursor: pointer; background: none; border: none;
-}
-
-/* ── Strava register modal ── */
-.modal-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.75);
-  z-index: 500;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.modal-overlay.open { display: flex; }
-
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: 18px;
-  padding: 28px;
-  width: 100%;
-  max-width: 440px;
-}
-
-.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--accent); margin-bottom: 18px; }
-
-/* ── No data ── */
-.empty { text-align: center; padding: 48px; color: var(--muted); }
-.empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
-
-/* ── Notification ── */
-.notif {
-  position: fixed;
-  bottom: 24px; right: 24px;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-size: 0.88rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 999;
-  transform: translateY(80px);
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  max-width: 320px;
-}
-
-.notif.show { transform: translateY(0); opacity: 1; }
-.notif.success { border-color: rgba(56,225,122,0.4); }
-.notif.error { border-color: rgba(255,77,109,0.4); }
-
-/* ── Runner profile cards ── */
-.profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px; }
-
-.profile-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.profile-card:hover { border-color: var(--border2); transform: translateY(-2px); }
-.profile-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.profile-card-name { font-weight: 700; }
-.profile-card-strava { font-size: 0.72rem; color: var(--muted); }
-
-.pb-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
-.pb-row:last-child { border-bottom: none; }
-.pb-dist-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
-.pb-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.88rem; }
-.pb-val.none { color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 400; font-size: 0.78rem; font-style: italic; }
-
-/* ── Scroll ── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-/* ── Responsive sidebar ── */
-.hamburger { display: none; }
-
-@media (max-width: 768px) {
-  .sidebar { position: fixed; left: -220px; z-index: 200; height: 100vh; transition: left 0.25s; }
-  .sidebar.open { left: 0; }
-  .hamburger { display: flex; position: fixed; top: 16px; left: 16px; z-index: 300; background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 1.1rem; }
-  .main { padding: 20px 16px; padding-top: 60px; }
-}
-
-.section { display: none; }
-.section.active { display: block; }
-
-/* ── Best Effort entry for official updates ── */
-.official-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-}
-.official-row:last-child { border-bottom: none; }
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 </style>
 </head>
 <body>
 <div class="app">
 
-<!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="logo">
     <div class="logo-title">🏃 PETRA RC</div>
     <div class="logo-sub">Petra Running Club · PB Tracker</div>
   </div>
-
   <div class="nav-section-label">Dashboard</div>
   <div class="nav-item active" onclick="goTo('stats')"><span class="nav-icon">📊</span> Club Overview</div>
   <div class="nav-item" onclick="goTo('leaderboard')"><span class="nav-icon">🏅</span> Leaderboard</div>
   <div class="nav-item" onclick="goTo('runners')"><span class="nav-icon">👥</span> All Runners</div>
-
   <div class="nav-section-label">Submit</div>
   <div class="nav-item" onclick="goTo('submit')"><span class="nav-icon">⚡</span> <span style="color:var(--gold)">Unofficial Record</span></div>
   <div class="nav-item" onclick="goTo('official')"><span class="nav-icon">✅</span> <span style="color:var(--green)">Official Record</span></div>
-
   <div class="nav-section-label">Admin</div>
-  <div class="nav-item" onclick="goTo('admin')"><span class="nav-icon">🔍</span> Review Queue <span class="pending-badge" id="pendingBadge">0</span></div>
+  <div class="nav-item" onclick="goTo('admin')"><span class="nav-icon">🔍</span> Review Queue <span class="pending-badge" id="pendingBadge"></span></div>
   <div class="nav-item" onclick="goTo('members')"><span class="nav-icon">⚙️</span> Manage Members</div>
 </aside>
 
-<!-- Mobile hamburger -->
-<button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
+<button class="hamburger" onclick="toggleSidebar()">☰</button>
 
-<!-- Main content -->
 <main class="main">
 
-  <!-- ── CLUB OVERVIEW ── -->
+  <!-- OVERVIEW -->
   <section class="section active" id="sec-stats">
     <div class="page-header">
       <div>
         <div class="page-title">Petra Running Club</div>
-        <div class="page-subtitle">Personal bests &amp; club highlights</div>
+        <div class="page-subtitle">Personal bests &amp; club highlights · live data</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-accent" onclick="goTo('submit')" style="background:var(--gold);color:#080b12">⚡ Submit Unofficial</button>
+        <button class="btn" style="background:var(--gold);color:#080b12;font-weight:700" onclick="goTo('submit')">⚡ Submit Unofficial</button>
         <button class="btn btn-accent" onclick="goTo('official')">✅ Update Official</button>
       </div>
     </div>
-
-    <!-- Quick action banner -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px">
       <div onclick="goTo('submit')" style="cursor:pointer;background:linear-gradient(135deg,rgba(255,201,77,0.12),rgba(255,201,77,0.04));border:1.5px solid rgba(255,201,77,0.3);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:14px;transition:all 0.2s" onmouseover="this.style.borderColor='rgba(255,201,77,0.7)'" onmouseout="this.style.borderColor='rgba(255,201,77,0.3)'">
         <div style="font-size:2rem">⚡</div>
-        <div>
-          <div style="font-weight:700;color:var(--gold);font-size:1rem">Submit Unofficial Record</div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px">Upload Strava screenshot · self-reported time</div>
-        </div>
+        <div><div style="font-weight:700;color:var(--gold);font-size:1rem">Submit Unofficial Record</div><div style="font-size:0.75rem;color:var(--muted);margin-top:3px">Self-reported Strava time · pending review</div></div>
         <div style="margin-left:auto;color:var(--gold);font-size:1.3rem">›</div>
       </div>
       <div onclick="goTo('official')" style="cursor:pointer;background:linear-gradient(135deg,rgba(56,225,122,0.12),rgba(56,225,122,0.04));border:1.5px solid rgba(56,225,122,0.3);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:14px;transition:all 0.2s" onmouseover="this.style.borderColor='rgba(56,225,122,0.7)'" onmouseout="this.style.borderColor='rgba(56,225,122,0.3)'">
         <div style="font-size:2rem">✅</div>
-        <div>
-          <div style="font-weight:700;color:var(--green);font-size:1rem">Update Official Record</div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:3px">Chip time · race certificate · verified result</div>
-        </div>
+        <div><div style="font-weight:700;color:var(--green);font-size:1rem">Update Official Record</div><div style="font-size:0.75rem;color:var(--muted);margin-top:3px">Chip time · race certificate · verified</div></div>
         <div style="margin-left:auto;color:var(--green);font-size:1.3rem">›</div>
       </div>
     </div>
-
-    <div class="stats-grid" id="statsGrid"></div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="champGrid"></div>
-
+    <div class="stats-grid" id="statsGrid"><div class="loader"><div class="spinner"></div></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:20px" id="champGrid"></div>
     <div class="card">
       <div style="font-weight:700;margin-bottom:14px;font-size:0.9rem">🔥 Recent Submissions</div>
-      <div id="recentList"></div>
+      <div id="recentList"><div class="loader"><div class="spinner"></div></div></div>
     </div>
   </section>
 
-  <!-- ── LEADERBOARD ── -->
+  <!-- LEADERBOARD -->
   <section class="section" id="sec-leaderboard">
     <div class="page-header">
-      <div>
-        <div class="page-title">Leaderboard</div>
-        <div class="page-subtitle">Rankings by distance · official &amp; unofficial times</div>
-      </div>
+      <div><div class="page-title">Leaderboard</div><div class="page-subtitle">Rankings · official &amp; unofficial times</div></div>
+      <button class="btn btn-outline btn-sm" onclick="loadAll()">🔄 Refresh</button>
     </div>
-
-    <div class="dist-tabs" id="lbDistTabs">
-      <button class="dist-tab active-5k" onclick="setLbDist('5k')">🟢 5K</button>
-      <button class="dist-tab" onclick="setLbDist('10k')">🔵 10K</button>
-      <button class="dist-tab" onclick="setLbDist('hm')">🟣 Half Marathon</button>
-      <button class="dist-tab" onclick="setLbDist('fm')">🟠 Full Marathon</button>
+    <div class="dist-tabs">
+      <button class="dist-tab active-5k" id="tab5k" onclick="setLbDist('5k')">🟢 5K</button>
+      <button class="dist-tab" id="tab10k" onclick="setLbDist('10k')">🔵 10K</button>
+      <button class="dist-tab" id="tabhm" onclick="setLbDist('hm')">🟣 Half Marathon</button>
+      <button class="dist-tab" id="tabfm" onclick="setLbDist('fm')">🟠 Full Marathon</button>
     </div>
-
-    <div class="card" style="padding:0;overflow:hidden">
-      <div id="lbTable"></div>
-    </div>
+    <div class="card" style="padding:0;overflow:hidden"><div id="lbTable"><div class="loader"><div class="spinner"></div></div></div></div>
   </section>
 
-  <!-- ── ALL RUNNERS ── -->
+  <!-- ALL RUNNERS -->
   <section class="section" id="sec-runners">
     <div class="page-header">
-      <div>
-        <div class="page-title">All Runners</div>
-        <div class="page-subtitle">Every club member &amp; their personal bests</div>
-      </div>
+      <div><div class="page-title">All Runners</div><div class="page-subtitle">Every Petra RC member &amp; their personal bests</div></div>
+      <button class="btn btn-outline btn-sm" onclick="loadAll()">🔄 Refresh</button>
     </div>
-    <div class="profile-grid" id="profileGrid"></div>
+    <div class="profile-grid" id="profileGrid"><div class="loader"><div class="spinner"></div></div></div>
   </section>
 
-  <!-- ── SUBMIT PB ── -->
+  <!-- SUBMIT UNOFFICIAL -->
   <section class="section" id="sec-submit">
     <div class="page-header">
-      <div>
-        <div class="page-title" style="color:var(--gold)">⚡ Submit Unofficial Record</div>
-        <div class="page-subtitle">Self-reported Strava time · goes to admin review first</div>
-      </div>
+      <div><div class="page-title" style="color:var(--gold)">⚡ Submit Unofficial Record</div><div class="page-subtitle">Self-reported Strava time · goes to admin review first</div></div>
     </div>
-
-    <div class="card" style="max-width:640px">
+    <div class="card" style="max-width:600px">
       <div class="submit-grid">
         <div class="form-group" style="grid-column:1/-1">
-          <label class="form-label">Select Your Strava Name *</label>
-          <select class="form-select" id="sub_name">
-            <option value="">— Choose your name —</option>
-          </select>
-          <span style="font-size:0.72rem;color:var(--muted)">Not listed? <a href="#" style="color:var(--accent);text-decoration:none" onclick="openRegister()">Register your Strava name →</a></span>
+          <label class="form-label">Select Your Name *</label>
+          <select class="form-select" id="sub_name"><option value="">— Choose your name —</option></select>
+          <span style="font-size:0.72rem;color:var(--muted)">Not listed? <a href="#" style="color:var(--accent);text-decoration:none" onclick="openRegister();return false">Register here →</a></span>
         </div>
-
         <div class="form-group">
           <label class="form-label">Distance *</label>
           <select class="form-select" id="sub_dist">
             <option value="">— Select —</option>
-            <option value="5k">5K</option>
-            <option value="10k">10K</option>
-            <option value="hm">Half Marathon</option>
-            <option value="fm">Full Marathon</option>
+            <option value="5k">5K</option><option value="10k">10K</option>
+            <option value="hm">Half Marathon</option><option value="fm">Full Marathon</option>
           </select>
         </div>
-
         <div class="form-group">
           <label class="form-label">Date of Run *</label>
           <input type="date" class="form-input" id="sub_date">
         </div>
-
         <div class="form-group" style="grid-column:1/-1">
-          <label class="form-label">Unofficial Time (from Strava) *</label>
+          <label class="form-label">Your Time (from Strava) *</label>
           <input type="text" class="form-input" id="sub_time" placeholder="e.g. 23:45 or 1:45:30">
           <span style="font-size:0.72rem;color:var(--muted)">Format: MM:SS for 5K/10K &nbsp;·&nbsp; H:MM:SS for half/full</span>
         </div>
-
-
       </div>
-
       <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-outline" onclick="clearSubmitForm()">Clear</button>
-        <button class="btn btn-accent" onclick="submitPB()">🚀 Submit for Review</button>
+        <button class="btn" style="background:var(--gold);color:#080b12;font-weight:700" id="submitBtn" onclick="submitPB()">⚡ Submit for Review</button>
       </div>
     </div>
   </section>
 
-  <!-- ── UPDATE OFFICIAL TIME ── -->
+  <!-- OFFICIAL RECORD -->
   <section class="section" id="sec-official">
     <div class="page-header">
-      <div>
-        <div class="page-title" style="color:var(--green)">✅ Update Official Record</div>
-        <div class="page-subtitle">Enter chip time / race certificate · instantly reflected on leaderboard</div>
-      </div>
+      <div><div class="page-title" style="color:var(--green)">✅ Update Official Record</div><div class="page-subtitle">Chip time · race cert · instantly on leaderboard</div></div>
     </div>
-
     <div class="card" style="max-width:560px">
-      <div class="form-group" style="margin-bottom:16px">
+      <div class="form-group" style="margin-bottom:14px">
         <label class="form-label">Select Runner *</label>
-        <select class="form-select" id="off_runner">
-          <option value="">— Choose runner —</option>
-        </select>
+        <select class="form-select" id="off_runner" onchange="prefillOfficial()"><option value="">— Choose runner —</option></select>
       </div>
-
-      <div class="form-group" style="margin-bottom:20px">
+      <div class="form-group" style="margin-bottom:18px">
         <label class="form-label">Race / Event Name</label>
         <input type="text" class="form-input" id="off_race" placeholder="e.g. KLSCM 2025">
       </div>
-
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted2);margin-bottom:12px">Official Times (leave blank to skip)</div>
-
-      <div class="official-row">
-        <span style="width:130px;font-size:0.85rem;color:var(--5k)">🟢 5K</span>
-        <input type="text" class="form-input" id="off_5k" placeholder="23:45">
-      </div>
-      <div class="official-row">
-        <span style="width:130px;font-size:0.85rem;color:var(--10k)">🔵 10K</span>
-        <input type="text" class="form-input" id="off_10k" placeholder="48:30">
-      </div>
-      <div class="official-row">
-        <span style="width:130px;font-size:0.85rem;color:var(--hm)">🟣 Half Marathon</span>
-        <input type="text" class="form-input" id="off_hm" placeholder="1:45:00">
-      </div>
-      <div class="official-row">
-        <span style="width:130px;font-size:0.85rem;color:var(--fm)">🟠 Full Marathon</span>
-        <input type="text" class="form-input" id="off_fm" placeholder="3:52:00">
-      </div>
-
-      <div style="margin-top:22px;display:flex;gap:10px;justify-content:flex-end">
-        <button class="btn btn-accent" onclick="saveOfficial()">✅ Save Official Times</button>
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted2);margin-bottom:10px">Official Times (leave blank to skip)</div>
+      <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--5k)">🟢 5K</span><input type="text" class="form-input" id="off_5k" placeholder="23:45"></div>
+      <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--10k)">🔵 10K</span><input type="text" class="form-input" id="off_10k" placeholder="48:30"></div>
+      <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--hm)">🟣 Half Marathon</span><input type="text" class="form-input" id="off_hm" placeholder="1:45:00"></div>
+      <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--fm)">🟠 Full Marathon</span><input type="text" class="form-input" id="off_fm" placeholder="3:52:00"></div>
+      <div style="margin-top:22px;display:flex;justify-content:flex-end">
+        <button class="btn btn-accent" id="officialBtn" onclick="saveOfficial()">✅ Save Official Times</button>
       </div>
     </div>
   </section>
 
-  <!-- ── ADMIN REVIEW QUEUE ── -->
+  <!-- ADMIN QUEUE -->
   <section class="section" id="sec-admin">
     <div class="page-header">
-      <div>
-        <div class="page-title">Review Queue</div>
-        <div class="page-subtitle">Approve or reject pending submissions</div>
-      </div>
+      <div><div class="page-title">Review Queue</div><div class="page-subtitle">Approve or reject pending submissions</div></div>
+      <button class="btn btn-outline btn-sm" onclick="loadAll()">🔄 Refresh</button>
     </div>
-
-    <div id="adminQueue"></div>
+    <div id="adminQueue"><div class="loader"><div class="spinner"></div></div></div>
   </section>
 
-  <!-- ── MANAGE MEMBERS ── -->
+  <!-- MANAGE MEMBERS -->
   <section class="section" id="sec-members">
     <div class="page-header">
-      <div>
-        <div class="page-title">Manage Members</div>
-        <div class="page-subtitle">Register &amp; manage club members</div>
-      </div>
+      <div><div class="page-title">Manage Members</div><div class="page-subtitle">Register &amp; manage Petra RC members</div></div>
       <button class="btn btn-accent" onclick="openRegister()">+ Register Member</button>
     </div>
-
     <div class="card" style="padding:0;overflow:hidden">
-      <table class="lb-table" id="membersTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Strava Username</th>
-            <th>Gender</th>
-            <th>PBs</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="membersBody"></tbody>
+      <table class="lb-table">
+        <thead><tr><th>Name</th><th>Strava</th><th>Gender</th><th>PBs</th><th></th></tr></thead>
+        <tbody id="membersBody"><tr><td colspan="5"><div class="loader"><div class="spinner"></div></div></td></tr></tbody>
       </table>
     </div>
   </section>
@@ -748,7 +280,7 @@ body::before {
 </main>
 </div>
 
-<!-- Register member modal -->
+<!-- Register Modal -->
 <div class="modal-overlay" id="registerModal">
   <div class="modal">
     <div class="modal-title">Register Member</div>
@@ -762,597 +294,323 @@ body::before {
     </div>
     <div class="form-group" style="margin-bottom:18px">
       <label class="form-label">Gender</label>
-      <select class="form-select" id="reg_gender">
-        <option value="M">Male</option>
-        <option value="F">Female</option>
-      </select>
+      <select class="form-select" id="reg_gender"><option value="M">Male</option><option value="F">Female</option></select>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="closeRegister()">Cancel</button>
-      <button class="btn btn-accent" onclick="registerMember()">Register</button>
+      <button class="btn btn-accent" id="regBtn" onclick="registerMember()">Register</button>
     </div>
   </div>
 </div>
 
-<!-- Lightbox -->
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <img id="lightboxImg" src="" alt="screenshot">
-</div>
-
-<!-- Notification -->
 <div class="notif" id="notif"></div>
 
 <script>
-// ──────────────────────────────────────────
-// DATA
-// ──────────────────────────────────────────
+const SUPA_URL = 'https://pkgkssmfyiapzxhbizfu.supabase.co';
+const SUPA_KEY = 'sb_publishable_6C0pD3YWVhZrQT5zk9VfQw_RmpT-XcV';
+const db = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+let members = [], submissions = [], lbDist = '5k';
 const COLORS = ['#e8ff47','#4a9eff','#9f7aea','#ff6b35','#38e17a','#ffc94d','#ff80b5','#06c4b0','#ff4d6d','#84cc16'];
 
-const defaultMembers = [
-  { id: 1, name: 'Ahmad Rizal', strava: 'ahmad_rizal88', gender: 'M',
-    official: { '5k': '22:14', '10k': '46:30', hm: '1:42:05', fm: '3:38:22' } },
-  { id: 2, name: 'Siti Nabilah', strava: 'siti_runs', gender: 'F',
-    official: { '5k': '24:50', '10k': '52:10', hm: '1:55:00', fm: null } },
-  { id: 3, name: 'Rajan Kumar', strava: 'rajan_km', gender: 'M',
-    official: { '5k': '19:55', '10k': '42:18', hm: '1:33:44', fm: '3:15:00' } },
-  { id: 4, name: 'Wei Ling', strava: 'weilingflies', gender: 'F',
-    official: { '5k': '23:30', '10k': '49:55', hm: '1:48:22', fm: '3:55:10' } },
-  { id: 5, name: 'Farid Hassan', strava: 'farid_pace', gender: 'M',
-    official: { '5k': '21:05', '10k': '44:50', hm: null, fm: null } },
-  { id: 6, name: 'Priya Menon', strava: 'priya_menon', gender: 'F',
-    official: { '5k': '26:40', '10k': '55:30', hm: '2:05:18', fm: null } },
-  { id: 7, name: 'Lee Chong', strava: 'leechong_run', gender: 'M',
-    official: { '5k': '20:30', '10k': '43:10', hm: '1:35:55', fm: '3:22:40' } },
-];
-
-const defaultQueue = [
-  { id: 'q1', memberId: 2, name: 'Siti Nabilah', strava: 'siti_runs', dist: 'fm', time: '4:12:35', date: '2025-04-20', screenshot: null, status: 'pending' },
-  { id: 'q2', memberId: 5, name: 'Farid Hassan', strava: 'farid_pace', dist: 'hm', time: '1:38:44', date: '2025-04-27', screenshot: null, status: 'pending' },
-];
-
-let members = JSON.parse(localStorage.getItem('pacepack_members') || 'null') || defaultMembers;
-let queue = JSON.parse(localStorage.getItem('pacepack_queue') || 'null') || defaultQueue;
-
-function save() {
-  localStorage.setItem('pacepack_members', JSON.stringify(members));
-  localStorage.setItem('pacepack_queue', JSON.stringify(queue));
+function timeToSec(t){if(!t)return Infinity;const p=t.split(':').map(Number);if(p.length===2)return p[0]*60+p[1];if(p.length===3)return p[0]*3600+p[1]*60+p[2];return Infinity}
+function distColor(d){return{'5k':'var(--5k)','10k':'var(--10k)',hm:'var(--hm)',fm:'var(--fm)'}[d]}
+function distLabel(d){return{'5k':'5K','10k':'10K',hm:'Half Marathon',fm:'Full Marathon'}[d]}
+function distEmoji(d){return{'5k':'🟢','10k':'🔵',hm:'🟣',fm:'🟠'}[d]}
+function getAvatar(name,idx){const c=COLORS[idx%COLORS.length];return`<div class="avatar" style="background:${c}22;color:${c};border:1.5px solid ${c}44">${name.charAt(0).toUpperCase()}</div>`}
+function getBest(m,dist){
+  const official=m['pb_'+dist];
+  const approved=submissions.filter(s=>s.member_id===m.id&&s.dist===dist&&s.status==='approved');
+  let best=official;
+  for(const a of approved){if(timeToSec(a.time)<timeToSec(best))best=a.time}
+  return best||null;
+}
+function notify(msg,type='success'){
+  const el=document.getElementById('notif');
+  el.innerHTML=(type==='success'?'✅ ':'❌ ')+msg;
+  el.className=`notif ${type} show`;
+  setTimeout(()=>el.classList.remove('show'),3500);
+}
+function setBtnLoading(id,loading,label){
+  const b=document.getElementById(id);if(!b)return;
+  b.disabled=loading;b.textContent=loading?'Please wait...':label;
 }
 
-// ──────────────────────────────────────────
-// NAVIGATION
-// ──────────────────────────────────────────
-let currentSection = 'stats';
-let lbDist = '5k';
+async function loadAll(){
+  const[{data:mem,error:e1},{data:sub,error:e2}]=await Promise.all([
+    db.from('members').select('*').order('name'),
+    db.from('submissions').select('*').order('created_at',{ascending:false})
+  ]);
+  if(e1||e2){notify('Could not connect to database. Check your Supabase setup.','error');return}
+  members=mem||[];submissions=sub||[];
+  updatePendingBadge();
+  renderCurrentSection();
+}
 
-function goTo(sec) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('sec-' + sec).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.textContent.toLowerCase().includes(sec === 'stats' ? 'overview' : sec === 'admin' ? 'review' : sec === 'members' ? 'manage' : sec === 'submit' ? 'submit pb' : sec === 'official' ? 'update' : sec === 'leaderboard' ? 'leaderboard' : sec === 'runners' ? 'all runners' : '')) {
-      n.classList.add('active');
-    }
-  });
-  currentSection = sec;
-  // Close sidebar on mobile
+function renderCurrentSection(){
+  const a=document.querySelector('.section.active');
+  if(a)renderSection(a.id.replace('sec-',''));
+}
+
+function goTo(sec){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+sec).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const map={stats:'overview',leaderboard:'leaderboard',runners:'runners',submit:'unofficial',official:'official',admin:'review',members:'manage'};
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.textContent.toLowerCase().includes(map[sec]||sec))n.classList.add('active')});
   document.getElementById('sidebar').classList.remove('open');
   renderSection(sec);
 }
 
-function renderSection(sec) {
-  if (sec === 'stats') renderStats();
-  else if (sec === 'leaderboard') renderLeaderboard();
-  else if (sec === 'runners') renderRunners();
-  else if (sec === 'submit') renderSubmitForm();
-  else if (sec === 'official') renderOfficialForm();
-  else if (sec === 'admin') renderAdminQueue();
-  else if (sec === 'members') renderMembers();
-  updatePendingBadge();
+function renderSection(sec){
+  if(sec==='stats')renderStats();
+  else if(sec==='leaderboard')renderLeaderboard();
+  else if(sec==='runners')renderRunners();
+  else if(sec==='submit')renderSubmitDropdowns();
+  else if(sec==='official')renderOfficialDropdowns();
+  else if(sec==='admin')renderAdminQueue();
+  else if(sec==='members')renderMembers();
 }
 
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+function updatePendingBadge(){
+  const n=submissions.filter(s=>s.status==='pending').length;
+  const el=document.getElementById('pendingBadge');
+  el.textContent=n;el.style.display=n?'inline':'none';
 }
 
-// ──────────────────────────────────────────
-// HELPERS
-// ──────────────────────────────────────────
-function timeToSec(t) {
-  if (!t) return Infinity;
-  const p = t.split(':').map(Number);
-  if (p.length === 2) return p[0] * 60 + p[1];
-  if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
-  return Infinity;
-}
-
-function getAvatar(name, idx) {
-  const c = COLORS[idx % COLORS.length];
-  return `<div class="avatar" style="background:${c}22;color:${c};border:1.5px solid ${c}44">${name.charAt(0).toUpperCase()}</div>`;
-}
-
-function getMemberIdx(id) { return members.findIndex(m => m.id === id); }
-
-function getBestTime(member, dist) {
-  // Best = min of official and approved unofficial
-  const officialT = member.official[dist];
-  const approved = queue.filter(q => q.memberId === member.id && q.dist === dist && q.status === 'approved');
-  let best = officialT;
-  for (const a of approved) {
-    if (timeToSec(a.time) < timeToSec(best)) best = a.time;
-  }
-  return best || null;
-}
-
-function distColor(dist) {
-  return { '5k': 'var(--5k)', '10k': 'var(--10k)', hm: 'var(--hm)', fm: 'var(--fm)' }[dist];
-}
-function distLabel(dist) {
-  return { '5k': '5K', '10k': '10K', hm: 'Half Marathon', fm: 'Full Marathon' }[dist];
-}
-
-function notify(msg, type = 'success') {
-  const el = document.getElementById('notif');
-  el.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + msg;
-  el.className = `notif ${type} show`;
-  setTimeout(() => el.classList.remove('show'), 3200);
-}
-
-function updatePendingBadge() {
-  const n = queue.filter(q => q.status === 'pending').length;
-  document.getElementById('pendingBadge').textContent = n;
-  document.getElementById('pendingBadge').style.display = n ? 'inline' : 'none';
-}
-
-// ──────────────────────────────────────────
 // STATS
-// ──────────────────────────────────────────
-function renderStats() {
-  const dists = ['5k', '10k', 'hm', 'fm'];
-  const totalPBs = members.reduce((sum, m) => sum + dists.filter(d => getBestTime(m, d)).length, 0);
-  const approved = queue.filter(q => q.status === 'approved').length;
-  const pending = queue.filter(q => q.status === 'pending').length;
-  const with5k = members.filter(m => getBestTime(m, '5k')).length;
-  const withFM = members.filter(m => getBestTime(m, 'fm')).length;
+function renderStats(){
+  const dists=['5k','10k','hm','fm'];
+  const totalPBs=members.reduce((s,m)=>s+dists.filter(d=>getBest(m,d)).length,0);
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card c-accent"><div class="stat-label">Members</div><div class="stat-value">${members.length}</div></div>
+    <div class="stat-card c-green"><div class="stat-label">PBs Recorded</div><div class="stat-value">${totalPBs}</div></div>
+    <div class="stat-card c-blue"><div class="stat-label">5K Runners</div><div class="stat-value">${members.filter(m=>getBest(m,'5k')).length}</div></div>
+    <div class="stat-card c-orange"><div class="stat-label">Marathoners</div><div class="stat-value">${members.filter(m=>getBest(m,'fm')).length}</div></div>
+    <div class="stat-card c-gold"><div class="stat-label">Approved</div><div class="stat-value">${submissions.filter(s=>s.status==='approved').length}</div></div>
+    <div class="stat-card c-purple"><div class="stat-label">Pending</div><div class="stat-value">${submissions.filter(s=>s.status==='pending').length}</div></div>`;
 
-  document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card c-accent">
-      <div class="stat-label">Total Members</div>
-      <div class="stat-value">${members.length}</div>
-    </div>
-    <div class="stat-card c-green">
-      <div class="stat-label">PBs Recorded</div>
-      <div class="stat-value">${totalPBs}</div>
-    </div>
-    <div class="stat-card c-blue">
-      <div class="stat-label">5K Runners</div>
-      <div class="stat-value">${with5k}</div>
-      <div class="stat-sub">have a 5K PB</div>
-    </div>
-    <div class="stat-card c-orange">
-      <div class="stat-label">Marathoners</div>
-      <div class="stat-value">${withFM}</div>
-      <div class="stat-sub">have a full marathon PB</div>
-    </div>
-    <div class="stat-card c-gold">
-      <div class="stat-label">Approved</div>
-      <div class="stat-value">${approved}</div>
-      <div class="stat-sub">submissions</div>
-    </div>
-    <div class="stat-card c-purple">
-      <div class="stat-label">Pending</div>
-      <div class="stat-value">${pending}</div>
-      <div class="stat-sub">awaiting review</div>
-    </div>
-  `;
-
-  // Champions per distance
-  const champHTML = dists.map(dist => {
-    const ranked = [...members].filter(m => getBestTime(m, dist))
-      .sort((a, b) => timeToSec(getBestTime(a, dist)) - timeToSec(getBestTime(b, dist)));
-    if (!ranked.length) return `<div class="card"><div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:${distColor(dist)}">${distLabel(dist)}</div><div class="empty" style="padding:20px"><div>No PBs yet</div></div></div>`;
-    const champ = ranked[0];
-    const idx = members.indexOf(champ);
-    return `<div class="card" style="border-color:${distColor(dist)}33">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${distColor(dist)};margin-bottom:12px">🏆 ${distLabel(dist)} Champion</div>
+  document.getElementById('champGrid').innerHTML=dists.map(dist=>{
+    const ranked=[...members].filter(m=>getBest(m,dist)).sort((a,b)=>timeToSec(getBest(a,dist))-timeToSec(getBest(b,dist)));
+    if(!ranked.length)return`<div class="card"><div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:${distColor(dist)}">${distLabel(dist)}</div><div class="empty" style="padding:20px;font-size:0.85rem">No PBs yet</div></div>`;
+    const champ=ranked[0],idx=members.indexOf(champ);
+    return`<div class="card" style="border-color:${distColor(dist)}33">
+      <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${distColor(dist)};margin-bottom:12px">🏆 ${distLabel(dist)} Champion</div>
       <div style="display:flex;align-items:center;gap:10px">
-        ${getAvatar(champ.name, idx)}
-        <div>
-          <div style="font-weight:700">${champ.name}</div>
-          <div style="font-size:0.72rem;color:var(--muted)">@${champ.strava}</div>
-        </div>
+        ${getAvatar(champ.name,idx)}
+        <div><div style="font-weight:700">${champ.name}</div><div style="font-size:0.72rem;color:var(--muted)">@${champ.strava}</div></div>
         <div style="margin-left:auto;text-align:right">
-          <div class="pb-mono" style="color:${distColor(dist)}">${getBestTime(champ, dist)}</div>
+          <div class="pb-mono" style="color:${distColor(dist)}">${getBest(champ,dist)}</div>
           <div style="font-size:0.7rem;color:var(--muted)">#1 of ${ranked.length}</div>
         </div>
-      </div>
-    </div>`;
+      </div></div>`;
   }).join('');
 
-  document.getElementById('champGrid').innerHTML = champHTML;
-  document.getElementById('champGrid').style.gridTemplateColumns = 'repeat(auto-fill, minmax(240px, 1fr))';
-
-  // Recent submissions
-  const recent = [...queue].sort((a, b) => b.id.localeCompare(a.id)).slice(0, 5);
-  if (!recent.length) {
-    document.getElementById('recentList').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>No submissions yet</div></div>';
-    return;
-  }
-  document.getElementById('recentList').innerHTML = recent.map(sub => {
-    const statusBadge = sub.status === 'approved' ? '<span class="time-type-badge badge-official">Approved</span>' : sub.status === 'rejected' ? '<span class="time-type-badge" style="background:rgba(255,77,109,0.12);color:var(--red)">Rejected</span>' : '<span class="time-type-badge badge-pending">Pending</span>';
-    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:1.1rem">${{ '5k': '🟢', '10k': '🔵', hm: '🟣', fm: '🟠' }[sub.dist]}</span>
-      <div style="flex:1">
-        <span style="font-weight:600">${sub.name}</span>
-        <span style="font-size:0.78rem;color:var(--muted);margin-left:8px">@${sub.strava}</span>
-      </div>
-      <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${distColor(sub.dist)}">${sub.time}</div>
-      <div>${statusBadge}</div>
-      <div style="font-size:0.72rem;color:var(--muted)">${sub.date || ''}</div>
-    </div>`;
-  }).join('');
+  const recent=submissions.slice(0,6);
+  document.getElementById('recentList').innerHTML=recent.length?recent.map(s=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:1.1rem">${distEmoji(s.dist)}</span>
+      <div style="flex:1"><span style="font-weight:600">${s.name}</span><span style="font-size:0.75rem;color:var(--muted);margin-left:8px">@${s.strava}</span></div>
+      <div class="pb-mono" style="color:${distColor(s.dist)};font-size:0.9rem">${s.time}</div>
+      <span class="time-type-badge ${s.status==='approved'?'badge-official':s.status==='rejected'?'':'badge-unofficial'}" style="${s.status==='rejected'?'background:rgba(255,77,109,0.12);color:var(--red)':''}">${s.status}</span>
+    </div>`).join('')
+  :'<div class="empty" style="padding:24px"><div class="empty-icon">📭</div><div>No submissions yet</div></div>';
 }
 
-// ──────────────────────────────────────────
 // LEADERBOARD
-// ──────────────────────────────────────────
-function setLbDist(dist) {
-  lbDist = dist;
-  document.querySelectorAll('.dist-tab').forEach((t, i) => {
-    const d = ['5k', '10k', 'hm', 'fm'][i];
-    t.className = 'dist-tab' + (dist === d ? ` active-${d}` : '');
+function setLbDist(dist){
+  lbDist=dist;
+  ['5k','10k','hm','fm'].forEach(d=>{
+    document.getElementById('tab'+d).className='dist-tab'+(dist===d?' active-'+d:'');
   });
   renderLeaderboard();
 }
+function renderLeaderboard(){
+  const color=distColor(lbDist),label=distLabel(lbDist);
+  const rows=members.map((m,idx)=>{
+    const official=m['pb_'+lbDist];
+    const approvedUn=submissions.filter(s=>s.member_id===m.id&&s.dist===lbDist&&s.status==='approved').sort((a,b)=>timeToSec(a.time)-timeToSec(b.time))[0];
+    const bestT=getBest(m,lbDist);
+    return{m,idx,official,bestUnofficial:approvedUn?.time,bestT};
+  }).filter(r=>r.bestT).sort((a,b)=>timeToSec(a.bestT)-timeToSec(b.bestT));
 
-function renderLeaderboard() {
-  const dist = lbDist;
-  const color = distColor(dist);
-  const label = distLabel(dist);
-
-  // Get all members with any time (official or approved unofficial)
-  const rows = members.map((m, idx) => {
-    const officialT = m.official[dist];
-    const approvedUnofficials = queue.filter(q => q.memberId === m.id && q.dist === dist && q.status === 'approved');
-    const bestUnofficial = approvedUnofficials.sort((a, b) => timeToSec(a.time) - timeToSec(b.time))[0];
-    const bestT = getBestTime(m, dist);
-    return { m, idx, officialT, bestUnofficial: bestUnofficial ? bestUnofficial.time : null, bestT };
-  }).filter(r => r.bestT).sort((a, b) => timeToSec(a.bestT) - timeToSec(b.bestT));
-
-  if (!rows.length) {
-    document.getElementById('lbTable').innerHTML = '<div class="empty"><div class="empty-icon">🏅</div><div>No ' + label + ' PBs yet</div></div>';
-    return;
-  }
-
-  const rankIcon = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
-  const rankCls = r => ['r1','r2','r3'][r-1] || 'rn';
-
-  const tableRows = rows.map((row, i) => {
-    const rank = i + 1;
-    const { m, idx, officialT, bestUnofficial, bestT } = row;
-    const genderEl = `<span class="${m.gender === 'M' ? 'gender-m' : 'gender-f'}">${m.gender === 'M' ? '♂ M' : '♀ F'}</span>`;
-
-    const timeType = officialT && timeToSec(officialT) <= timeToSec(bestUnofficial)
-      ? '<span class="time-type-badge badge-official">Official</span>'
-      : '<span class="time-type-badge badge-unofficial">Unofficial</span>';
-
-    const officialCol = officialT
-      ? `<span class="pb-mono" style="color:var(--green);font-size:0.88rem">${officialT}</span>`
-      : `<span style="color:var(--muted);font-size:0.78rem;font-style:italic">—</span>`;
-
-    const unofficialCol = bestUnofficial
-      ? `<span class="pb-mono" style="color:var(--gold);font-size:0.88rem">${bestUnofficial}</span>`
-      : `<span style="color:var(--muted);font-size:0.78rem;font-style:italic">—</span>`;
-
-    return `<tr>
-      <td><span class="rank-num ${rankCls(rank)}">${rankIcon(rank)}</span></td>
-      <td>
-        <div class="runner-cell">
-          ${getAvatar(m.name, idx)}
-          <div>
-            <div class="runner-name-col">${m.name}</div>
-            <div class="runner-strava">@${m.strava}</div>
-          </div>
-        </div>
-      </td>
-      <td>${genderEl}</td>
-      <td><span class="pb-mono" style="color:${color}">${bestT}</span> ${timeType}</td>
-      <td>${officialCol}</td>
-      <td>${unofficialCol}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('lbTable').innerHTML = `
-    <table class="lb-table">
-      <thead>
-        <tr>
-          <th style="width:48px">Rank</th>
-          <th>Runner</th>
-          <th>Gender</th>
-          <th style="color:${color}">${label} Best</th>
-          <th style="color:var(--green)">✅ Official</th>
-          <th style="color:var(--gold)">⚡ Unofficial</th>
-        </tr>
-      </thead>
-      <tbody>${tableRows}</tbody>
-    </table>`;
+  if(!rows.length){document.getElementById('lbTable').innerHTML=`<div class="empty"><div class="empty-icon">🏅</div><div>No ${label} PBs yet</div></div>`;return}
+  const ri=r=>r===1?'🥇':r===2?'🥈':r===3?'🥉':r;
+  const rc=r=>['r1','r2','r3'][r-1]||'rn';
+  document.getElementById('lbTable').innerHTML=`
+    <table class="lb-table"><thead><tr>
+      <th style="width:48px">Rank</th><th>Runner</th><th>Gender</th>
+      <th style="color:${color}">${label} Best</th>
+      <th style="color:var(--green)">✅ Official</th>
+      <th style="color:var(--gold)">⚡ Unofficial</th>
+    </tr></thead><tbody>
+    ${rows.map(({m,idx,official,bestUnofficial,bestT},i)=>{
+      const rank=i+1;
+      const isOff=official&&timeToSec(official)<=timeToSec(bestUnofficial);
+      return`<tr>
+        <td><span class="rank-num ${rc(rank)}">${ri(rank)}</span></td>
+        <td><div class="runner-cell">${getAvatar(m.name,idx)}<div><div class="runner-name-col">${m.name}</div><div class="runner-strava">@${m.strava}</div></div></div></td>
+        <td><span class="${m.gender==='M'?'gender-m':'gender-f'}">${m.gender==='M'?'♂ M':'♀ F'}</span></td>
+        <td><span class="pb-mono" style="color:${color}">${bestT}</span> <span class="time-type-badge ${isOff?'badge-official':'badge-unofficial'}">${isOff?'Official':'Unofficial'}</span></td>
+        <td>${official?`<span class="pb-mono" style="color:var(--green);font-size:0.88rem">${official}</span>`:'<span style="color:var(--muted);font-style:italic;font-size:0.78rem">—</span>'}</td>
+        <td>${bestUnofficial?`<span class="pb-mono" style="color:var(--gold);font-size:0.88rem">${bestUnofficial}</span>`:'<span style="color:var(--muted);font-style:italic;font-size:0.78rem">—</span>'}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
 }
 
-// ──────────────────────────────────────────
 // ALL RUNNERS
-// ──────────────────────────────────────────
-function renderRunners() {
-  const dists = ['5k', '10k', 'hm', 'fm'];
-  if (!members.length) {
-    document.getElementById('profileGrid').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div>No members yet</div></div>';
-    return;
-  }
-  document.getElementById('profileGrid').innerHTML = members.map((m, idx) => {
-    const pbRows = dists.map(d => {
-      const best = getBestTime(m, d);
-      return `<div class="pb-row">
-        <span class="pb-dist-label" style="color:${distColor(d)}">${distLabel(d)}</span>
-        <span class="pb-val ${best ? '' : 'none'}">${best || '—'}</span>
-      </div>`;
-    }).join('');
-    return `<div class="profile-card">
+function renderRunners(){
+  if(!members.length){document.getElementById('profileGrid').innerHTML='<div class="empty"><div class="empty-icon">👥</div><div>No members yet. Be the first to register!</div></div>';return}
+  document.getElementById('profileGrid').innerHTML=members.map((m,idx)=>`
+    <div class="profile-card">
       <div class="profile-card-top">
-        ${getAvatar(m.name, idx)}
-        <div>
-          <div class="profile-card-name">${m.name}</div>
-          <div class="profile-card-strava">@${m.strava} · <span class="${m.gender === 'M' ? 'gender-m' : 'gender-f'}">${m.gender === 'M' ? '♂ M' : '♀ F'}</span></div>
-        </div>
+        ${getAvatar(m.name,idx)}
+        <div><div style="font-weight:700">${m.name}</div><div style="font-size:0.72rem;color:var(--muted)">@${m.strava} · <span class="${m.gender==='M'?'gender-m':'gender-f'}">${m.gender==='M'?'♂ M':'♀ F'}</span></div></div>
       </div>
-      ${pbRows}
-    </div>`;
-  }).join('');
+      ${['5k','10k','hm','fm'].map(d=>{const best=getBest(m,d);return`
+        <div class="pb-row">
+          <span class="pb-dist-label" style="color:${distColor(d)}">${distLabel(d)}</span>
+          <span class="pb-val ${best?'':'none'}">${best||'—'}</span>
+        </div>`}).join('')}
+    </div>`).join('');
 }
 
-// ──────────────────────────────────────────
-// SUBMIT PB
-// ──────────────────────────────────────────
-function renderSubmitForm() {
-  const sel = document.getElementById('sub_name');
-  sel.innerHTML = '<option value="">— Choose your name —</option>' +
-    members.map(m => `<option value="${m.id}">${m.name} (@${m.strava})</option>`).join('');
-  // Default date
-  document.getElementById('sub_date').value = new Date().toISOString().split('T')[0];
+// SUBMIT
+function renderSubmitDropdowns(){
+  document.getElementById('sub_name').innerHTML='<option value="">— Choose your name —</option>'+members.map(m=>`<option value="${m.id}">${m.name} (@${m.strava})</option>`).join('');
+  document.getElementById('sub_date').value=new Date().toISOString().split('T')[0];
+}
+function clearSubmitForm(){
+  ['sub_name','sub_dist','sub_time'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sub_date').value=new Date().toISOString().split('T')[0];
+}
+async function submitPB(){
+  const memberId=parseInt(document.getElementById('sub_name').value);
+  const dist=document.getElementById('sub_dist').value;
+  const time=document.getElementById('sub_time').value.trim();
+  const date=document.getElementById('sub_date').value;
+  if(!memberId){notify('Please select your name','error');return}
+  if(!dist){notify('Please select a distance','error');return}
+  if(!time){notify('Please enter your time','error');return}
+  const member=members.find(m=>m.id===memberId);
+  setBtnLoading('submitBtn',true,'');
+  const{error}=await db.from('submissions').insert({member_id:memberId,name:member.name,strava:member.strava,dist,time,date,status:'pending'});
+  setBtnLoading('submitBtn',false,'⚡ Submit for Review');
+  if(error){notify('Error: '+error.message,'error');return}
+  await loadAll();clearSubmitForm();
+  notify(`${time} submitted for ${distLabel(dist)} — pending review! 🎉`);
 }
 
-
-
-function clearSubmitForm() {
-  document.getElementById('sub_name').value = '';
-  document.getElementById('sub_dist').value = '';
-  document.getElementById('sub_time').value = '';
-  document.getElementById('sub_date').value = new Date().toISOString().split('T')[0];
+// OFFICIAL
+function renderOfficialDropdowns(){
+  document.getElementById('off_runner').innerHTML='<option value="">— Choose runner —</option>'+members.map(m=>`<option value="${m.id}">${m.name} (@${m.strava})</option>`).join('');
+  ['5k','10k','hm','fm'].forEach(d=>document.getElementById('off_'+d).value='');
+  document.getElementById('off_race').value='';
+}
+function prefillOfficial(){
+  const id=parseInt(document.getElementById('off_runner').value);
+  const m=members.find(x=>x.id===id);
+  if(m)['5k','10k','hm','fm'].forEach(d=>document.getElementById('off_'+d).value=m['pb_'+d]||'');
+}
+async function saveOfficial(){
+  const id=parseInt(document.getElementById('off_runner').value);
+  if(!id){notify('Please select a runner','error');return}
+  const updates={};
+  ['5k','10k','hm','fm'].forEach(d=>{const v=document.getElementById('off_'+d).value.trim();if(v)updates['pb_'+d]=v});
+  if(!Object.keys(updates).length){notify('No times entered','error');return}
+  setBtnLoading('officialBtn',true,'');
+  const{error}=await db.from('members').update(updates).eq('id',id);
+  setBtnLoading('officialBtn',false,'✅ Save Official Times');
+  if(error){notify('Error: '+error.message,'error');return}
+  await loadAll();
+  notify('Official times saved! ✅');
 }
 
-function submitPB() {
-  const memberId = parseInt(document.getElementById('sub_name').value);
-  const dist = document.getElementById('sub_dist').value;
-  const time = document.getElementById('sub_time').value.trim();
-  const date = document.getElementById('sub_date').value;
-
-  if (!memberId) { notify('Please select your name', 'error'); return; }
-  if (!dist) { notify('Please select a distance', 'error'); return; }
-  if (!time) { notify('Please enter your time', 'error'); return; }
-
-  const member = members.find(m => m.id === memberId);
-
-  const submission = {
-    id: 'q' + Date.now(),
-    memberId,
-    name: member.name,
-    strava: member.strava,
-    dist,
-    time,
-    date,
-    screenshot: null,
-    status: 'pending'
-  };
-
-  queue.push(submission);
-  save();
-  clearSubmitForm();
-  updatePendingBadge();
-  notify(`Submitted ${time} for ${distLabel(dist)} — pending review!`);
-}
-
-// ──────────────────────────────────────────
-// OFFICIAL TIMES
-// ──────────────────────────────────────────
-function renderOfficialForm() {
-  const sel = document.getElementById('off_runner');
-  sel.innerHTML = '<option value="">— Choose runner —</option>' +
-    members.map(m => `<option value="${m.id}">${m.name} (@${m.strava})</option>`).join('');
-  ['5k', '10k', 'hm', 'fm'].forEach(d => document.getElementById('off_' + d.replace('-', '_')).value = '');
-  document.getElementById('off_race').value = '';
-
-  sel.onchange = () => {
-    const m = members.find(x => x.id === parseInt(sel.value));
-    if (m) {
-      ['5k', '10k', 'hm', 'fm'].forEach(d => {
-        const inp = document.getElementById('off_' + d.replace('-', '_'));
-        inp.value = m.official[d] || '';
-      });
-    }
-  };
-}
-
-function saveOfficial() {
-  const id = parseInt(document.getElementById('off_runner').value);
-  if (!id) { notify('Please select a runner', 'error'); return; }
-  const m = members.find(x => x.id === id);
-  const dists = ['5k', '10k', 'hm', 'fm'];
-  dists.forEach(d => {
-    const val = document.getElementById('off_' + d.replace('-', '_')).value.trim();
-    if (val) m.official[d] = val;
-  });
-  save();
-  notify(`Official times updated for ${m.name}!`);
-}
-
-// ──────────────────────────────────────────
-// ADMIN QUEUE
-// ──────────────────────────────────────────
-function renderAdminQueue() {
-  const pending = queue.filter(q => q.status === 'pending');
-  const done = queue.filter(q => q.status !== 'pending');
-
-  if (!pending.length && !done.length) {
-    document.getElementById('adminQueue').innerHTML = '<div class="empty"><div class="empty-icon">🎉</div><div>Queue is empty — nothing to review</div></div>';
-    return;
+// ADMIN
+function renderAdminQueue(){
+  const pending=submissions.filter(s=>s.status==='pending');
+  const done=submissions.filter(s=>s.status!=='pending');
+  let html='';
+  if(pending.length){
+    html+=`<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:12px">Awaiting Review (${pending.length})</div>`;
+    html+=pending.map(buildQueueCard).join('');
   }
-
-  let html = '';
-  if (pending.length) {
-    html += `<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:12px">Awaiting Review (${pending.length})</div>`;
-    html += pending.map(sub => buildQueueCard(sub)).join('');
+  if(done.length){
+    html+=`<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:20px 0 12px">Reviewed</div>`;
+    html+=done.map(buildQueueCard).join('');
   }
-  if (done.length) {
-    html += `<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:20px 0 12px">Reviewed</div>`;
-    html += done.map(sub => buildQueueCard(sub)).join('');
-  }
-  document.getElementById('adminQueue').innerHTML = html;
+  if(!html)html='<div class="empty"><div class="empty-icon">🎉</div><div>Queue is empty — nothing to review</div></div>';
+  document.getElementById('adminQueue').innerHTML=html;
 }
-
-function buildQueueCard(sub) {
-  const color = distColor(sub.dist);
-  const imgEl = sub.screenshot
-    ? `<img class="queue-screenshot" src="${sub.screenshot}" alt="screenshot" onclick="openLightbox('${sub.id}')">`
-    : `<div style="width:64px;height:64px;border-radius:8px;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">📸</div>`;
-
-  const actionBtns = sub.status === 'pending'
-    ? `<button class="btn btn-approve btn-sm" onclick="reviewSub('${sub.id}','approved')">✅ Approve</button>
-       <button class="btn btn-danger btn-sm" onclick="reviewSub('${sub.id}','rejected')">❌ Reject</button>`
-    : sub.status === 'approved'
-      ? `<span class="time-type-badge badge-official">Approved</span>`
-      : `<span class="time-type-badge" style="background:rgba(255,77,109,0.12);color:var(--red)">Rejected</span>`;
-
-  return `<div class="queue-card">
+function buildQueueCard(sub){
+  const color=distColor(sub.dist);
+  const actions=sub.status==='pending'
+    ?`<button class="btn btn-approve btn-sm" onclick="reviewSub(${sub.id},'approved')">✅ Approve</button><button class="btn btn-danger btn-sm" onclick="reviewSub(${sub.id},'rejected')">❌ Reject</button>`
+    :sub.status==='approved'
+      ?`<span class="time-type-badge badge-official">Approved</span>`
+      :`<span class="time-type-badge" style="background:rgba(255,77,109,0.12);color:var(--red)">Rejected</span>`;
+  return`<div class="queue-card">
     <div class="queue-info">
       <div class="queue-name">${sub.name}</div>
-      <div class="queue-meta">@${sub.strava} · <span style="color:${color}">${distLabel(sub.dist)}</span> · ${sub.date || 'No date'}</div>
+      <div class="queue-meta">@${sub.strava} · <span style="color:${color}">${distLabel(sub.dist)}</span> · ${sub.date||'No date'}</div>
     </div>
     <div class="queue-time" style="color:${color}">${sub.time}</div>
     <span class="time-type-badge badge-unofficial" style="align-self:center">Unofficial</span>
-    <div class="queue-actions">${actionBtns}</div>
+    <div class="queue-actions">${actions}</div>
   </div>`;
 }
-
-function reviewSub(id, status) {
-  const sub = queue.find(q => q.id === id);
-  if (!sub) return;
-  sub.status = status;
-
-  if (status === 'approved') {
-    // Check if this beats official PB
-    const member = members.find(m => m.id === sub.memberId);
-    if (member) {
-      const currentOfficial = member.official[sub.dist];
-      if (!currentOfficial || timeToSec(sub.time) < timeToSec(currentOfficial)) {
-        // Don't auto-update official — leave it to admin
-      }
-    }
-    notify(`✅ Approved ${sub.name}'s ${distLabel(sub.dist)} – ${sub.time}`);
-  } else {
-    notify(`Rejected ${sub.name}'s submission`, 'error');
-  }
-  save();
-  updatePendingBadge();
-  renderAdminQueue();
+async function reviewSub(id,status){
+  const{error}=await db.from('submissions').update({status}).eq('id',id);
+  if(error){notify('Error: '+error.message,'error');return}
+  await loadAll();
+  notify(status==='approved'?'Submission approved! ✅':'Submission rejected');
 }
 
-function openLightbox(subId) {
-  const sub = queue.find(q => q.id === subId);
-  if (!sub || !sub.screenshot) return;
-  document.getElementById('lightboxImg').src = sub.screenshot;
-  document.getElementById('lightbox').classList.add('open');
-}
-
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
-}
-
-// ──────────────────────────────────────────
-// MEMBERS MANAGEMENT
-// ──────────────────────────────────────────
-function renderMembers() {
-  const dists = ['5k', '10k', 'hm', 'fm'];
-  if (!members.length) {
-    document.getElementById('membersBody').innerHTML = `<tr><td colspan="5"><div class="empty">No members yet</div></td></tr>`;
-    return;
-  }
-  document.getElementById('membersBody').innerHTML = members.map((m, idx) => {
-    const pbCount = dists.filter(d => getBestTime(m, d)).length;
-    return `<tr>
-      <td>
-        <div class="runner-cell">
-          ${getAvatar(m.name, idx)}
-          <span style="font-weight:600">${m.name}</span>
-        </div>
-      </td>
+// MEMBERS
+function renderMembers(){
+  if(!members.length){document.getElementById('membersBody').innerHTML='<tr><td colspan="5"><div class="empty">No members yet</div></td></tr>';return}
+  document.getElementById('membersBody').innerHTML=members.map((m,idx)=>`
+    <tr>
+      <td><div class="runner-cell">${getAvatar(m.name,idx)}<span style="font-weight:600">${m.name}</span></div></td>
       <td style="color:var(--muted);font-size:0.85rem">@${m.strava}</td>
-      <td><span class="${m.gender === 'M' ? 'gender-m' : 'gender-f'}">${m.gender === 'M' ? '♂ M' : '♀ F'}</span></td>
-      <td><span style="font-size:0.78rem;color:var(--muted2)">${pbCount} / 4 PBs</span></td>
-      <td>
-        <button class="btn btn-ghost btn-sm" onclick="deleteMember(${m.id})" style="color:var(--red)">🗑️</button>
-      </td>
-    </tr>`;
-  }).join('');
+      <td><span class="${m.gender==='M'?'gender-m':'gender-f'}">${m.gender==='M'?'♂ M':'♀ F'}</span></td>
+      <td><span style="font-size:0.78rem;color:var(--muted2)">${['5k','10k','hm','fm'].filter(d=>getBest(m,d)).length} / 4 PBs</span></td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteMember(${m.id})">🗑️</button></td>
+    </tr>`).join('');
+}
+async function deleteMember(id){
+  if(!confirm('Remove this member and all their submissions?'))return;
+  await db.from('submissions').delete().eq('member_id',id);
+  await db.from('members').delete().eq('id',id);
+  await loadAll();notify('Member removed');
 }
 
-function deleteMember(id) {
-  if (!confirm('Remove this member and all their data?')) return;
-  members = members.filter(m => m.id !== id);
-  queue = queue.filter(q => q.memberId !== id);
-  save();
-  renderMembers();
-  notify('Member removed');
-}
-
-// ──────────────────────────────────────────
-// REGISTER MODAL
-// ──────────────────────────────────────────
-function openRegister() {
-  document.getElementById('reg_name').value = '';
-  document.getElementById('reg_strava').value = '';
-  document.getElementById('reg_gender').value = 'M';
+// REGISTER
+function openRegister(){
+  ['reg_name','reg_strava'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('reg_gender').value='M';
   document.getElementById('registerModal').classList.add('open');
 }
-
-function closeRegister() {
-  document.getElementById('registerModal').classList.remove('open');
+function closeRegister(){document.getElementById('registerModal').classList.remove('open')}
+async function registerMember(){
+  const name=document.getElementById('reg_name').value.trim();
+  const strava=document.getElementById('reg_strava').value.trim().replace('@','');
+  const gender=document.getElementById('reg_gender').value;
+  if(!name||!strava){notify('Name and Strava username required','error');return}
+  setBtnLoading('regBtn',true,'');
+  const{error}=await db.from('members').insert({name,strava,gender,pb_5k:null,pb_10k:null,pb_hm:null,pb_fm:null});
+  setBtnLoading('regBtn',false,'Register');
+  if(error){notify(error.code==='23505'?'Strava username already registered!':'Error: '+error.message,'error');return}
+  await loadAll();closeRegister();
+  notify(`Welcome to Petra RC, ${name}! 🎉`);
 }
+document.getElementById('registerModal').addEventListener('click',e=>{if(e.target===document.getElementById('registerModal'))closeRegister()});
 
-function registerMember() {
-  const name = document.getElementById('reg_name').value.trim();
-  const strava = document.getElementById('reg_strava').value.trim().replace('@', '');
-  const gender = document.getElementById('reg_gender').value;
-
-  if (!name || !strava) { notify('Name and Strava username required', 'error'); return; }
-  if (members.find(m => m.strava.toLowerCase() === strava.toLowerCase())) { notify('Strava username already exists', 'error'); return; }
-
-  members.push({ id: Date.now(), name, strava, gender, official: { '5k': null, '10k': null, hm: null, fm: null } });
-  save();
-  closeRegister();
-  notify(`${name} registered!`);
-  renderMembers();
-  // refresh dropdowns if needed
-  renderSubmitForm();
-}
-
-document.getElementById('registerModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('registerModal')) closeRegister();
-});
-
-// ──────────────────────────────────────────
 // INIT
-// ──────────────────────────────────────────
-renderStats();
-updatePendingBadge();
+loadAll();
+setInterval(loadAll,30000);
 </script>
 </body>
 </html>
