@@ -224,7 +224,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       </div>
       <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-outline" onclick="clearSubmitForm()">Clear</button>
-        <button class="btn" style="background:var(--gold);color:#080b12;font-weight:700" id="submitBtn" onclick="submitPB()">⚡ Submit for Review</button>
+        <button class="btn" style="background:var(--gold);color:#080b12;font-weight:700" id="submitBtn" onclick="submitPB()">⚡ Submit Record</button>
       </div>
     </div>
   </section>
@@ -299,6 +299,23 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="closeRegister()">Cancel</button>
       <button class="btn btn-accent" id="regBtn" onclick="registerMember()">Register</button>
+    </div>
+  </div>
+</div>
+
+<!-- Amend PB Modal -->
+<div class="modal-overlay" id="amendModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Amend PBs</div>
+    <div style="font-size:0.85rem;color:var(--muted2);margin-bottom:18px">Editing: <strong id="amend_name_label" style="color:var(--text)"></strong></div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted2);margin-bottom:10px">Update Times (leave blank to keep existing)</div>
+    <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--5k)">🟢 5K</span><input type="text" class="form-input" id="amend_5k" placeholder="e.g. 23:45"></div>
+    <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--10k)">🔵 10K</span><input type="text" class="form-input" id="amend_10k" placeholder="e.g. 48:30"></div>
+    <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--hm)">🟣 Half Marathon</span><input type="text" class="form-input" id="amend_hm" placeholder="e.g. 1:45:00"></div>
+    <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--fm)">🟠 Full Marathon</span><input type="text" class="form-input" id="amend_fm" placeholder="e.g. 3:52:00"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-outline" onclick="closeAmend()">Cancel</button>
+      <button class="btn btn-accent" id="amendBtn" onclick="saveAmend()">💾 Save Changes</button>
     </div>
   </div>
 </div>
@@ -467,7 +484,8 @@ function renderRunners(){
     <div class="profile-card">
       <div class="profile-card-top">
         ${getAvatar(m.name,idx)}
-        <div><div style="font-weight:700">${m.name}</div><div style="font-size:0.72rem;color:var(--muted)">@${m.strava} · <span class="${m.gender==='M'?'gender-m':'gender-f'}">${m.gender==='M'?'♂ M':'♀ F'}</span></div></div>
+        <div style="flex:1"><div style="font-weight:700">${m.name}</div><div style="font-size:0.72rem;color:var(--muted)">@${m.strava} · <span class="${m.gender==='M'?'gender-m':'gender-f'}">${m.gender==='M'?'♂ M':'♀ F'}</span></div></div>
+        <button class="btn btn-sm" style="background:rgba(232,255,71,0.1);color:var(--accent);border:1px solid rgba(232,255,71,0.2);padding:5px 10px;font-size:0.72rem" onclick="openAmend(${m.id})">✏️ Amend</button>
       </div>
       ${['5k','10k','hm','fm'].map(d=>{const best=getBest(m,d);return`
         <div class="pb-row">
@@ -496,12 +514,45 @@ async function submitPB(){
   if(!time){notify('Please enter your time','error');return}
   const member=members.find(m=>m.id===memberId);
   setBtnLoading('submitBtn',true,'');
-  const{error}=await db.from('submissions').insert({member_id:memberId,name:member.name,strava:member.strava,dist,time,date,status:'pending'});
-  setBtnLoading('submitBtn',false,'⚡ Submit for Review');
+  // Goes live immediately — status approved, no review queue
+  const{error}=await db.from('submissions').insert({member_id:memberId,name:member.name,strava:member.strava,dist,time,date,status:'approved'});
+  setBtnLoading('submitBtn',false,'⚡ Submit Record');
   if(error){notify('Error: '+error.message,'error');return}
   await loadAll();clearSubmitForm();
-  notify(`${time} submitted for ${distLabel(dist)} — pending review! 🎉`);
+  notify(`${time} for ${distLabel(dist)} is live on the leaderboard! 🎉`);
 }
+
+// AMEND — edit a member's PBs directly
+let amendingMemberId=null;
+function openAmend(id){
+  amendingMemberId=id;
+  const m=members.find(x=>x.id===id);
+  if(!m)return;
+  document.getElementById('amend_name_label').textContent=m.name;
+  // Pre-fill with current best (official or best unofficial)
+  ['5k','10k','hm','fm'].forEach(d=>{
+    document.getElementById('amend_'+d).value=getBest(m,d)||'';
+  });
+  document.getElementById('amendModal').classList.add('open');
+}
+function closeAmend(){document.getElementById('amendModal').classList.remove('open');amendingMemberId=null}
+async function saveAmend(){
+  if(!amendingMemberId)return;
+  const m=members.find(x=>x.id===amendingMemberId);
+  const updates={};
+  ['5k','10k','hm','fm'].forEach(d=>{
+    const v=document.getElementById('amend_'+d).value.trim();
+    if(v)updates['pb_'+d]=v;
+  });
+  if(!Object.keys(updates).length){notify('No times entered','error');return}
+  setBtnLoading('amendBtn',true,'');
+  const{error}=await db.from('members').update(updates).eq('id',amendingMemberId);
+  setBtnLoading('amendBtn',false,'💾 Save Changes');
+  if(error){notify('Error: '+error.message,'error');return}
+  await loadAll();closeAmend();
+  notify(`${m.name}'s PBs updated! ✅`);
+}
+document.getElementById('amendModal').addEventListener('click',e=>{if(e.target===document.getElementById('amendModal'))closeAmend()});
 
 // OFFICIAL
 function renderOfficialDropdowns(){
@@ -577,7 +628,7 @@ function renderMembers(){
       <td style="color:var(--muted);font-size:0.85rem">@${m.strava}</td>
       <td><span class="${m.gender==='M'?'gender-m':'gender-f'}">${m.gender==='M'?'♂ M':'♀ F'}</span></td>
       <td><span style="font-size:0.78rem;color:var(--muted2)">${['5k','10k','hm','fm'].filter(d=>getBest(m,d)).length} / 4 PBs</span></td>
-      <td><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteMember(${m.id})">🗑️</button></td>
+      <td><button class="btn btn-ghost btn-sm" style="color:var(--accent)" onclick="openAmend(${m.id})">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteMember(${m.id})">🗑️</button></td>
     </tr>`).join('');
 }
 async function deleteMember(id){
