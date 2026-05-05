@@ -128,7 +128,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div class="nav-item" onclick="goTo('submit')"><span class="nav-icon">⚡</span> <span style="color:var(--gold)">Unofficial Record</span></div>
   <div class="nav-item" onclick="goTo('official')"><span class="nav-icon">✅</span> <span style="color:var(--green)">Official Record</span></div>
   <div class="nav-section-label">Admin</div>
-  <div class="nav-item" onclick="goTo('admin')"><span class="nav-icon">🔍</span> Review Queue <span class="pending-badge" id="pendingBadge"></span></div>
+  <div class="nav-item" onclick="goTo('admin')"><span class="nav-icon">🗂️</span> Manage Records <span class="pending-badge" id="pendingBadge"></span></div>
   <div class="nav-item" onclick="goTo('members')"><span class="nav-icon">⚙️</span> Manage Members</div>
 </aside>
 
@@ -257,7 +257,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <!-- ADMIN QUEUE -->
   <section class="section" id="sec-admin">
     <div class="page-header">
-      <div><div class="page-title">Review Queue</div><div class="page-subtitle">Approve or reject pending submissions</div></div>
+      <div><div class="page-title">Manage Records</div><div class="page-subtitle">Edit or delete any submission entry</div></div>
       <button class="btn btn-outline btn-sm" onclick="loadAll()">🔄 Refresh</button>
     </div>
     <div id="adminQueue"><div class="loader"><div class="spinner"></div></div></div>
@@ -303,16 +303,52 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
+<!-- Edit Record Modal -->
+<div class="modal-overlay" id="editRecModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Edit Record</div>
+    <div style="font-size:0.85rem;color:var(--muted2);margin-bottom:18px" id="editrec_label"></div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Time *</label>
+      <input type="text" class="form-input" id="editrec_time" placeholder="e.g. 23:45 or 1:45:30">
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label class="form-label">Date</label>
+      <input type="date" class="form-input" id="editrec_date">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeEditRecord()">Cancel</button>
+      <button class="btn btn-accent" id="editRecBtn" onclick="saveEditRecord()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Amend PB Modal -->
 <div class="modal-overlay" id="amendModal">
   <div class="modal">
     <div class="modal-title">✏️ Amend PBs</div>
     <div style="font-size:0.85rem;color:var(--muted2);margin-bottom:18px">Editing: <strong id="amend_name_label" style="color:var(--text)"></strong></div>
-    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted2);margin-bottom:10px">Update Times (leave blank to keep existing)</div>
-    <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--5k)">🟢 5K</span><input type="text" class="form-input" id="amend_5k" placeholder="e.g. 23:45"></div>
-    <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--10k)">🔵 10K</span><input type="text" class="form-input" id="amend_10k" placeholder="e.g. 48:30"></div>
-    <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--hm)">🟣 Half Marathon</span><input type="text" class="form-input" id="amend_hm" placeholder="e.g. 1:45:00"></div>
-    <div class="official-row"><span style="width:140px;font-size:0.85rem;color:var(--fm)">🟠 Full Marathon</span><input type="text" class="form-input" id="amend_fm" placeholder="e.g. 3:52:00"></div>
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted2);margin-bottom:10px">Update Times — leave blank to keep, hit 🗑️ to clear completely</div>
+    <div class="official-row">
+      <span style="width:130px;font-size:0.85rem;color:var(--5k)">🟢 5K</span>
+      <input type="text" class="form-input" id="amend_5k" placeholder="e.g. 23:45">
+      <button class="btn btn-danger btn-sm" style="padding:5px 10px;flex-shrink:0" onclick="clearDistOfficial('5k')" title="Clear 5K official time">🗑️</button>
+    </div>
+    <div class="official-row">
+      <span style="width:130px;font-size:0.85rem;color:var(--10k)">🔵 10K</span>
+      <input type="text" class="form-input" id="amend_10k" placeholder="e.g. 48:30">
+      <button class="btn btn-danger btn-sm" style="padding:5px 10px;flex-shrink:0" onclick="clearDistOfficial('10k')" title="Clear 10K official time">🗑️</button>
+    </div>
+    <div class="official-row">
+      <span style="width:130px;font-size:0.85rem;color:var(--hm)">🟣 Half Marathon</span>
+      <input type="text" class="form-input" id="amend_hm" placeholder="e.g. 1:45:00">
+      <button class="btn btn-danger btn-sm" style="padding:5px 10px;flex-shrink:0" onclick="clearDistOfficial('hm')" title="Clear Half Marathon official time">🗑️</button>
+    </div>
+    <div class="official-row">
+      <span style="width:130px;font-size:0.85rem;color:var(--fm)">🟠 Full Marathon</span>
+      <input type="text" class="form-input" id="amend_fm" placeholder="e.g. 3:52:00">
+      <button class="btn btn-danger btn-sm" style="padding:5px 10px;flex-shrink:0" onclick="clearDistOfficial('fm')" title="Clear Full Marathon official time">🗑️</button>
+    </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
       <button class="btn btn-outline" onclick="closeAmend()">Cancel</button>
       <button class="btn btn-accent" id="amendBtn" onclick="saveAmend()">💾 Save Changes</button>
@@ -536,22 +572,60 @@ function openAmend(id){
   document.getElementById('amendModal').classList.add('open');
 }
 function closeAmend(){document.getElementById('amendModal').classList.remove('open');amendingMemberId=null}
+
+// Clear just one distance's official time + all its approved submissions
+async function clearDistOfficial(dist){
+  if(!amendingMemberId)return;
+  const m=members.find(x=>x.id===amendingMemberId);
+  if(!confirm(`Clear ${m.name}'s official ${distLabel(dist)} time and all related records?`))return;
+  setBtnLoading('amendBtn',true,'');
+  // Null out the pb column
+  await db.from('members').update({['pb_'+dist]:null}).eq('id',amendingMemberId);
+  // Delete all approved submissions for this distance
+  await db.from('submissions').delete().eq('member_id',amendingMemberId).eq('dist',dist);
+  setBtnLoading('amendBtn',false,'💾 Save Changes');
+  // Clear the input field visually
+  document.getElementById('amend_'+dist).value='';
+  await loadAll();
+  // Re-open amend so user can see updated state
+  openAmend(amendingMemberId);
+  notify(`${m.name}'s ${distLabel(dist)} cleared completely ✅`);
+}
+
 async function saveAmend(){
   if(!amendingMemberId)return;
   const m=members.find(x=>x.id===amendingMemberId);
-  const updates={};
-  ['5k','10k','hm','fm'].forEach(d=>{
+  const dists=['5k','10k','hm','fm'];
+  const newTimes={};
+  dists.forEach(d=>{
     const v=document.getElementById('amend_'+d).value.trim();
-    if(v)updates['pb_'+d]=v;
+    if(v)newTimes[d]=v;
   });
-  if(!Object.keys(updates).length){notify('No times entered','error');return}
+  if(!Object.keys(newTimes).length){notify('No times entered — use 🗑️ to clear a category','error');return}
   setBtnLoading('amendBtn',true,'');
-  const{error}=await db.from('members').update(updates).eq('id',amendingMemberId);
+
+  // Update pb columns for filled distances
+  const updates={};
+  Object.entries(newTimes).forEach(([d,v])=>updates['pb_'+d]=v);
+  const{error:e1}=await db.from('members').update(updates).eq('id',amendingMemberId);
+  if(e1){setBtnLoading('amendBtn',false,'💾 Save Changes');notify('Error: '+e1.message,'error');return}
+
+  // Delete old approved submissions for updated distances then insert fresh ones
+  const today=new Date().toISOString().split('T')[0];
+  for(const [d,v] of Object.entries(newTimes)){
+    await db.from('submissions').delete().eq('member_id',amendingMemberId).eq('dist',d).eq('status','approved');
+    await db.from('submissions').insert({
+      member_id:amendingMemberId,name:m.name,strava:m.strava,
+      dist:d,time:v,date:today,status:'approved'
+    });
+  }
+
   setBtnLoading('amendBtn',false,'💾 Save Changes');
-  if(error){notify('Error: '+error.message,'error');return}
-  await loadAll();closeAmend();
-  notify(`${m.name}'s PBs updated! ✅`);
+  await loadAll();
+  closeAmend();
+  notify(`${m.name}'s PBs updated and live! ✅`);
 }
+document.getElementById('editRecModal').addEventListener('click',e=>{if(e.target===document.getElementById('editRecModal'))closeEditRecord()});
 document.getElementById('amendModal').addEventListener('click',e=>{if(e.target===document.getElementById('amendModal'))closeAmend()});
 
 // OFFICIAL
@@ -579,44 +653,92 @@ async function saveOfficial(){
   notify('Official times saved! ✅');
 }
 
-// ADMIN
+// ADMIN — manage all records with edit & delete per entry
 function renderAdminQueue(){
-  const pending=submissions.filter(s=>s.status==='pending');
-  const done=submissions.filter(s=>s.status!=='pending');
-  let html='';
-  if(pending.length){
-    html+=`<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:12px">Awaiting Review (${pending.length})</div>`;
-    html+=pending.map(buildQueueCard).join('');
+  if(!submissions.length){
+    document.getElementById('adminQueue').innerHTML='<div class="empty"><div class="empty-icon">📭</div><div>No records yet</div></div>';
+    return;
   }
-  if(done.length){
-    html+=`<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin:20px 0 12px">Reviewed</div>`;
-    html+=done.map(buildQueueCard).join('');
-  }
-  if(!html)html='<div class="empty"><div class="empty-icon">🎉</div><div>Queue is empty — nothing to review</div></div>';
+
+  // Group by member
+  const grouped={};
+  submissions.forEach(s=>{
+    if(!grouped[s.member_id])grouped[s.member_id]={name:s.name,strava:s.strava,entries:[]};
+    grouped[s.member_id].entries.push(s);
+  });
+
+  let html='<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:14px">All Submission Records — Edit or Delete any entry</div>';
+
+  Object.values(grouped).forEach(group=>{
+    const memberIdx=members.findIndex(m=>m.name===group.name);
+    html+=`
+    <div class="card" style="margin-bottom:14px;padding:16px 18px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+        ${getAvatar(group.name,memberIdx)}
+        <div><div style="font-weight:700">${group.name}</div><div style="font-size:0.72rem;color:var(--muted)">@${group.strava}</div></div>
+      </div>
+      ${group.entries.map(s=>{
+        const color=distColor(s.dist);
+        return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap">
+          <span style="font-size:1rem">${distEmoji(s.dist)}</span>
+          <span style="font-size:0.78rem;font-weight:700;color:${color};width:90px">${distLabel(s.dist)}</span>
+          <span class="pb-mono" style="color:${color};font-size:0.95rem;flex:1">${s.time}</span>
+          <span style="font-size:0.72rem;color:var(--muted);min-width:80px">${s.date||'No date'}</span>
+          <span class="time-type-badge ${s.status==='approved'?'badge-official':'badge-unofficial'}">${s.status}</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" style="background:rgba(232,255,71,0.08);color:var(--accent);border:1px solid rgba(232,255,71,0.2);padding:5px 10px;font-size:0.72rem" onclick="openEditRecord(${s.id})">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm" style="padding:5px 10px;font-size:0.72rem" onclick="deleteRecord(${s.id})">🗑️ Delete</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
   document.getElementById('adminQueue').innerHTML=html;
 }
-function buildQueueCard(sub){
-  const color=distColor(sub.dist);
-  const actions=sub.status==='pending'
-    ?`<button class="btn btn-approve btn-sm" onclick="reviewSub(${sub.id},'approved')">✅ Approve</button><button class="btn btn-danger btn-sm" onclick="reviewSub(${sub.id},'rejected')">❌ Reject</button>`
-    :sub.status==='approved'
-      ?`<span class="time-type-badge badge-official">Approved</span>`
-      :`<span class="time-type-badge" style="background:rgba(255,77,109,0.12);color:var(--red)">Rejected</span>`;
-  return`<div class="queue-card">
-    <div class="queue-info">
-      <div class="queue-name">${sub.name}</div>
-      <div class="queue-meta">@${sub.strava} · <span style="color:${color}">${distLabel(sub.dist)}</span> · ${sub.date||'No date'}</div>
-    </div>
-    <div class="queue-time" style="color:${color}">${sub.time}</div>
-    <span class="time-type-badge badge-unofficial" style="align-self:center">Unofficial</span>
-    <div class="queue-actions">${actions}</div>
-  </div>`;
+
+let editingRecordId=null;
+function openEditRecord(id){
+  editingRecordId=id;
+  const s=submissions.find(x=>x.id===id);
+  if(!s)return;
+  document.getElementById('editrec_label').textContent=`${s.name} · ${distLabel(s.dist)}`;
+  document.getElementById('editrec_time').value=s.time;
+  document.getElementById('editrec_date').value=s.date||'';
+  document.getElementById('editRecModal').classList.add('open');
+}
+function closeEditRecord(){document.getElementById('editRecModal').classList.remove('open');editingRecordId=null}
+async function saveEditRecord(){
+  if(!editingRecordId)return;
+  const time=document.getElementById('editrec_time').value.trim();
+  const date=document.getElementById('editrec_date').value;
+  if(!time){notify('Please enter a time','error');return}
+  setBtnLoading('editRecBtn',true,'');
+  const{error}=await db.from('submissions').update({time,date,status:'approved'}).eq('id',editingRecordId);
+  setBtnLoading('editRecBtn',false,'💾 Save');
+  if(error){notify('Error: '+error.message,'error');return}
+  await loadAll();closeEditRecord();
+  notify('Record updated! ✅');
+}
+async function deleteRecord(id){
+  const s=submissions.find(x=>x.id===id);
+  if(!confirm(`Delete ${s?.name}'s ${distLabel(s?.dist)} record of ${s?.time}?`))return;
+  // Delete the submission
+  const{error}=await db.from('submissions').delete().eq('id',id);
+  if(error){notify('Error: '+error.message,'error');return}
+  // Also null the official pb column if no other approved submissions remain for this dist
+  const remaining=submissions.filter(x=>x.id!==id&&x.member_id===s.member_id&&x.dist===s.dist&&x.status==='approved');
+  if(!remaining.length){
+    await db.from('members').update({['pb_'+s.dist]:null}).eq('id',s.member_id);
+  }
+  await loadAll();
+  notify(`Record deleted — ${distLabel(s.dist)} cleared ✅`);
 }
 async function reviewSub(id,status){
   const{error}=await db.from('submissions').update({status}).eq('id',id);
   if(error){notify('Error: '+error.message,'error');return}
   await loadAll();
-  notify(status==='approved'?'Submission approved! ✅':'Submission rejected');
+  notify(status==='approved'?'Approved! ✅':'Rejected');
 }
 
 // MEMBERS
