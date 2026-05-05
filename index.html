@@ -548,6 +548,7 @@ async function submitPB(){
   if(!memberId){notify('Please select your name','error');return}
   if(!dist){notify('Please select a distance','error');return}
   if(!time){notify('Please enter your time','error');return}
+  if(!isValidTime(time)){notify('Invalid time — cannot be 00:00','error');return}
   const member=members.find(m=>m.id===memberId);
   setBtnLoading('submitBtn',true,'');
   // Goes live immediately — status approved, no review queue
@@ -573,23 +574,29 @@ function openAmend(id){
 }
 function closeAmend(){document.getElementById('amendModal').classList.remove('open');amendingMemberId=null}
 
-// Clear just one distance's official time + all its approved submissions
+// Validate time — reject 00:00 or 0:00 entries
+function isValidTime(t){
+  if(!t)return false;
+  const p=t.split(':').map(Number);
+  const secs=p.length===2?p[0]*60+p[1]:p[0]*3600+p[1]*60+p[2];
+  return secs>0;
+}
+
+// Clear just one distance completely — nulls official + deletes ALL submissions for that dist
 async function clearDistOfficial(dist){
   if(!amendingMemberId)return;
   const m=members.find(x=>x.id===amendingMemberId);
-  if(!confirm(`Clear ${m.name}'s official ${distLabel(dist)} time and all related records?`))return;
+  if(!confirm(`Clear ${m.name}'s ${distLabel(dist)} completely? This removes official time AND all submissions for this distance.`))return;
   setBtnLoading('amendBtn',true,'');
-  // Null out the pb column
+  // Always null the pb column
   await db.from('members').update({['pb_'+dist]:null}).eq('id',amendingMemberId);
-  // Delete all approved submissions for this distance
+  // Delete ALL submissions for this distance (not just approved)
   await db.from('submissions').delete().eq('member_id',amendingMemberId).eq('dist',dist);
   setBtnLoading('amendBtn',false,'💾 Save Changes');
-  // Clear the input field visually
   document.getElementById('amend_'+dist).value='';
   await loadAll();
-  // Re-open amend so user can see updated state
   openAmend(amendingMemberId);
-  notify(`${m.name}'s ${distLabel(dist)} cleared completely ✅`);
+  notify(`${m.name}'s ${distLabel(dist)} fully cleared ✅`);
 }
 
 async function saveAmend(){
@@ -599,7 +606,8 @@ async function saveAmend(){
   const newTimes={};
   dists.forEach(d=>{
     const v=document.getElementById('amend_'+d).value.trim();
-    if(v)newTimes[d]=v;
+    if(v&&!isValidTime(v)){notify(`Invalid time for ${distLabel(d)} — cannot be 00:00`,'error');return}
+    if(v&&isValidTime(v))newTimes[d]=v;
   });
   if(!Object.keys(newTimes).length){notify('No times entered — use 🗑️ to clear a category','error');return}
   setBtnLoading('amendBtn',true,'');
@@ -643,7 +651,13 @@ async function saveOfficial(){
   const id=parseInt(document.getElementById('off_runner').value);
   if(!id){notify('Please select a runner','error');return}
   const updates={};
-  ['5k','10k','hm','fm'].forEach(d=>{const v=document.getElementById('off_'+d).value.trim();if(v)updates['pb_'+d]=v});
+  let hasInvalid=false;
+  ['5k','10k','hm','fm'].forEach(d=>{
+    const v=document.getElementById('off_'+d).value.trim();
+    if(v&&!isValidTime(v)){notify(`Invalid time for ${distLabel(d)} — cannot be 00:00`,'error');hasInvalid=true;return}
+    if(v&&isValidTime(v))updates['pb_'+d]=v;
+  });
+  if(hasInvalid)return;
   if(!Object.keys(updates).length){notify('No times entered','error');return}
   setBtnLoading('officialBtn',true,'');
   const{error}=await db.from('members').update(updates).eq('id',id);
@@ -723,16 +737,21 @@ async function saveEditRecord(){
 async function deleteRecord(id){
   const s=submissions.find(x=>x.id===id);
   if(!confirm(`Delete ${s?.name}'s ${distLabel(s?.dist)} record of ${s?.time}?`))return;
-  // Delete the submission
+  // Delete the submission entry
   const{error}=await db.from('submissions').delete().eq('id',id);
   if(error){notify('Error: '+error.message,'error');return}
-  // Also null the official pb column if no other approved submissions remain for this dist
+  // Check if any other approved submissions remain for this distance
   const remaining=submissions.filter(x=>x.id!==id&&x.member_id===s.member_id&&x.dist===s.dist&&x.status==='approved');
   if(!remaining.length){
+    // No more records — null the official pb column too
     await db.from('members').update({['pb_'+s.dist]:null}).eq('id',s.member_id);
+  } else {
+    // Still has records — set pb to the best remaining time
+    const bestRemaining=remaining.sort((a,b)=>timeToSec(a.time)-timeToSec(b.time))[0];
+    await db.from('members').update({['pb_'+s.dist]:bestRemaining.time}).eq('id',s.member_id);
   }
   await loadAll();
-  notify(`Record deleted — ${distLabel(s.dist)} cleared ✅`);
+  notify(`Record deleted ✅`);
 }
 async function reviewSub(id,status){
   const{error}=await db.from('submissions').update({status}).eq('id',id);
